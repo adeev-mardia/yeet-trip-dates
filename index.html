@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Winter Trip Dates</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap">
+<style>
+/* Layout: a single centered column, one step at a time — pick name, then a Mon–Sun week grid of the 30 trip-window days */
+:root{
+  --bg:#f3f6f5; --surface:#ffffff; --ink:#15211e; --muted:#5d6c68; --line:#d8e1de;
+  --accent:#1f5f8b; --accent-ink:#ffffff;
+  --free:#2e9b5a; --free-soft:#d7f0e0; --free-ink:#ffffff;
+  --heat0:#eef2f1; --heat1:#d7efe0; --heat2:#a9dcbc; --heat3:#6fc293; --heat4:#35a064; --heat5:#1b7a45;
+  --danger:#b43c2f;
+  --display:"Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1715; --surface:#17221f; --ink:#e6efec; --muted:#93a39e; --line:#2a3834;
+  --accent:#6fb3e0; --accent-ink:#0b1a24;
+  --free:#3fbf72; --free-soft:#1d3a2a; --free-ink:#06140c;
+  --heat0:#1c2825; --heat1:#1e3a2b; --heat2:#23583a; --heat3:#2b7a4c; --heat4:#35a064; --heat5:#5fd08e;
+  --danger:#ef8577; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1715; --surface:#17221f; --ink:#e6efec; --muted:#93a39e; --line:#2a3834;
+  --accent:#6fb3e0; --accent-ink:#0b1a24;
+  --free:#3fbf72; --free-soft:#1d3a2a; --free-ink:#06140c;
+  --heat0:#1c2825; --heat1:#1e3a2b; --heat2:#23583a; --heat3:#2b7a4c; --heat4:#35a064; --heat5:#5fd08e;
+  --danger:#ef8577; color-scheme:dark}
+
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:640px;margin:0 auto;padding-inline:16px;padding-block:28px 48px;display:flex;flex-direction:column;gap:22px}
+h1,h2{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+h1{font-size:clamp(28px,7vw,40px);font-weight:800;line-height:1.05}
+h2{font-size:20px;font-weight:600}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+p{margin:0}
+.muted{color:var(--muted)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px}
+label{font-weight:600;font-size:14px}
+select,input[type=password]{font:inherit;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);width:100%}
+button{font:inherit;font-weight:600;cursor:pointer;border-radius:10px;border:1px solid transparent;padding:11px 18px}
+.btn{background:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.5;cursor:default}
+.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+button:focus-visible,select:focus-visible,input:focus-visible,.day:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.err{color:var(--danger);font-size:14px}
+.status{font-size:14px;color:var(--muted);min-height:1.5em}
+.status.ok{color:var(--free)}
+.status.bad{color:var(--danger)}
+
+/* calendar */
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.dow{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:center;font-weight:600;padding-bottom:2px}
+.month{grid-column:1/-1;font-family:var(--display);font-weight:600;font-size:15px;padding-top:8px}
+.day{aspect-ratio:1/1;max-width:100%;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0;font-variant-numeric:tabular-nums;font-weight:600;font-size:16px;line-height:1;gap:3px;transition:background .12s,border-color .12s}
+.day small{font-size:10px;font-weight:500;color:var(--muted)}
+.day.blank{visibility:hidden}
+button.day:hover{border-color:var(--free)}
+.day.on{background:var(--free);border-color:var(--free);color:var(--free-ink)}
+.day.on small{color:var(--free-ink);opacity:.85}
+.day.sel{outline:2px solid var(--accent);outline-offset:1px}
+/* heat */
+.day.h0{background:var(--heat0)} .day.h1{background:var(--heat1)} .day.h2{background:var(--heat2)}
+.day.h3{background:var(--heat3);color:#fff} .day.h4{background:var(--heat4);color:#fff} .day.h5{background:var(--heat5);color:#fff}
+.day.h3 small,.day.h4 small,.day.h5 small{color:inherit;opacity:.9}
+.day.all{box-shadow:inset 0 0 0 2px var(--accent)}
+.legend{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.sw{width:18px;height:18px;border-radius:5px;border:1px solid var(--line)}
+.who{display:flex;flex-direction:column;gap:8px;font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:4px 10px;border-radius:999px;font-size:13px;font-weight:500;border:1px solid var(--line)}
+.chip.yes{background:var(--free-soft);border-color:var(--free);color:var(--ink)}
+.chip.no{color:var(--muted)}
+.best{font-size:14px}
+@media (prefers-reduced-motion:reduce){.day{transition:none}}
+</style>
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+<div class="wrap">
+  <!-- Step 1: name -->
+  <section id="pickView">
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span class="eyebrow">12 Dec 2026 – 10 Jan 2027</span>
+        <h1>When are you free for the trip?</h1>
+        <p class="muted">Pick your name, tap every day you can make it, then hit Submit. You can come back and change it any time.</p>
+      </div>
+      <div class="panel">
+        <label for="nameSelect">Who are you?</label>
+        <select id="nameSelect">
+          <option value="">Choose your name…</option>
+        </select>
+        <div id="pwBox" hidden style="display:flex;flex-direction:column;gap:8px">
+          <label for="pw">Password</label>
+          <input id="pw" type="password" autocomplete="current-password">
+        </div>
+        <p id="pickErr" class="err" hidden></p>
+        <div class="row"><button id="goBtn" class="btn" disabled>Continue</button></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Step 2: calendar -->
+  <section id="calView" hidden>
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <div class="topbar">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <span class="eyebrow">12 Dec – 10 Jan</span>
+          <h1 id="hello">Hi</h1>
+          <p class="muted">Tap the days you're free. Green means free.</p>
+        </div>
+        <button id="backBtn" class="ghost">Change name</button>
+      </div>
+
+      <div class="panel">
+        <div class="topbar"><h2>Your free days</h2><span id="count" class="muted" style="font-size:14px"></span></div>
+        <div id="myCal" class="cal"></div>
+        <div class="row">
+          <button id="submitBtn" class="btn">Submit</button>
+          <button id="clearBtn" class="ghost">Clear all</button>
+        </div>
+        <p id="status" class="status" role="status"></p>
+      </div>
+
+      <div id="groupPanel" class="panel" hidden>
+        <div class="topbar"><h2>Everyone combined</h2><span id="respCount" class="muted" style="font-size:14px"></span></div>
+        <p class="muted" style="font-size:14px">Darker green = more people free. Blue ring = everyone who's responded is free. Tap a day to see who.</p>
+        <div id="groupCal" class="cal"></div>
+        <div class="legend"><span>0</span><span class="sw" style="background:var(--heat0)"></span><span class="sw" style="background:var(--heat1)"></span><span class="sw" style="background:var(--heat2)"></span><span class="sw" style="background:var(--heat3)"></span><span class="sw" style="background:var(--heat4)"></span><span class="sw" style="background:var(--heat5)"></span><span>7 free</span></div>
+        <div id="who" class="who"></div>
+        <p id="best" class="best"></p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+(function(){
+  const SUPABASE_URL="https://nigetiedbmnzpvbnkzyq.supabase.co";
+  const SUPABASE_KEY="sb_publishable_MzoFgJlkqvu0MD84ts6NBg_Ic0Kwfwy";
+  const NAMES=["Aarav","Adeev","Aryan","Darseel","Prithvi","Rajveer","Vivan"];
+  const ADMIN="Adeev";
+  const START=new Date(2026,11,12), END=new Date(2027,0,10);
+  const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const DOW=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  const DAYS=[];for(let d=new Date(START);d<=END;d.setDate(d.getDate()+1))DAYS.push(new Date(d));
+  const fmt=s=>{const[y,m,d]=s.split("-").map(Number);const dt=new Date(y,m-1,d);return DOW[(dt.getDay()+6)%7]+" "+d+" "+MONTHS[m-1].slice(0,3)};
+
+  const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:false}});
+  const $=id=>document.getElementById(id);
+  const sel=$("nameSelect");
+  NAMES.forEach(n=>{const o=document.createElement("option");o.value=n;o.textContent=n;sel.appendChild(o)});
+
+  let me=null, pw=null, mine=new Set(), saved=new Set(), all={}, poll=null, focusDay=null;
+
+  sel.addEventListener("change",()=>{
+    $("pwBox").hidden=sel.value!==ADMIN; $("pickErr").hidden=true; $("goBtn").disabled=!sel.value;
+    if(sel.value===ADMIN)$("pw").focus();
+  });
+  $("pw").addEventListener("keydown",e=>{if(e.key==="Enter")$("goBtn").click()});
+
+  $("goBtn").addEventListener("click",async()=>{
+    const n=sel.value;if(!n)return;
+    let p=null;
+    if(n===ADMIN){
+      p=$("pw").value;
+      $("goBtn").disabled=true;
+      const {data,error}=await sb.rpc("check_admin",{p_password:p});
+      $("goBtn").disabled=false;
+      if(error){showPickErr("Couldn't reach the server. Check your connection and try again.");return}
+      if(!data){showPickErr("That password isn't right. Try again.");return}
+    }
+    $("pw").value="";
+    openCal(n,p);
+  });
+  function showPickErr(t){$("pickErr").textContent=t;$("pickErr").hidden=false}
+
+  $("backBtn").addEventListener("click",()=>{
+    if(poll){clearInterval(poll);poll=null}
+    me=null;pw=null;$("calView").hidden=true;$("pickView").hidden=false;sel.value="";$("goBtn").disabled=true;$("pwBox").hidden=true;
+  });
+
+  function setStatus(t,cls){$("status").textContent=t;$("status").className="status"+(cls?" "+cls:"")}
+
+  async function openCal(n,p){
+    me=n;pw=p;mine=new Set();saved=new Set();focusDay=null;
+    $("pickView").hidden=true;$("calView").hidden=false;
+    $("hello").textContent="Hi "+n;
+    setStatus("Loading your dates…");
+    $("groupPanel").hidden=n!==ADMIN;
+    renderMine();
+    const {data,error}=await sb.rpc("get_dates",{p_name:n,p_password:p});
+    if(me!==n)return;
+    if(error){setStatus("Couldn't load your saved days. Refresh and try again.","bad");return}
+    const ds=data||[];
+    mine=new Set(ds);saved=new Set(ds);
+    setStatus(ds.length?"Loaded the days you picked last time.":"");
+    renderMine();
+    if(n===ADMIN){await loadAll();poll=setInterval(loadAll,20000)}
+  }
+
+  async function loadAll(){
+    if(me!==ADMIN)return;
+    const {data,error}=await sb.rpc("get_all",{p_password:pw});
+    if(error){$("who").textContent="Couldn't load everyone's dates. Refresh the page.";return}
+    all={};(data||[]).forEach(r=>{all[r.name]=new Set(r.dates||[])});
+    renderGroup();
+  }
+
+  function header(cal){DOW.forEach(d=>{const e=document.createElement("div");e.className="dow";e.textContent=d;cal.appendChild(e)})}
+  function buildGrid(cal,makeCell){
+    cal.innerHTML="";header(cal);
+    let month=-1;
+    DAYS.forEach(d=>{
+      if(d.getMonth()!==month){
+        month=d.getMonth();
+        const m=document.createElement("div");m.className="month";m.textContent=MONTHS[month]+" "+d.getFullYear();cal.appendChild(m);
+        const offset=(d.getDay()+6)%7;
+        for(let k=0;k<offset;k++){const b=document.createElement("div");b.className="day blank";cal.appendChild(b)}
+      }
+      cal.appendChild(makeCell(d,iso(d)));
+    });
+  }
+
+  function renderMine(){
+    buildGrid($("myCal"),(d,k)=>{
+      const b=document.createElement("button");b.type="button";b.className="day"+(mine.has(k)?" on":"");
+      b.textContent=d.getDate();b.setAttribute("aria-pressed",mine.has(k));b.setAttribute("aria-label",fmt(k)+(mine.has(k)?", free":""));
+      b.addEventListener("click",()=>{mine.has(k)?mine.delete(k):mine.add(k);renderMine();dirty()});
+      return b;
+    });
+    $("count").textContent=mine.size+" day"+(mine.size===1?"":"s")+" picked";
+  }
+  function dirty(){
+    const same=mine.size===saved.size&&[...mine].every(x=>saved.has(x));
+    setStatus(same?"":"You have changes. Hit Submit to save them.");
+  }
+  $("clearBtn").addEventListener("click",()=>{mine.clear();renderMine();dirty()});
+
+  let saving=false;
+  $("submitBtn").addEventListener("click",async()=>{
+    if(saving||!me)return;
+    saving=true;$("submitBtn").disabled=true;setStatus("Saving…");
+    const dates=[...mine].sort();
+    const {error}=await sb.rpc("save_dates",{p_name:me,p_dates:dates,p_password:pw});
+    if(error){setStatus("Couldn't save right now. Wait a moment and hit Submit again.","bad")}
+    else{
+      saved=new Set(dates);
+      setStatus("Saved. "+dates.length+" free day"+(dates.length===1?"":"s")+" recorded.","ok");
+      if(me===ADMIN)loadAll();
+    }
+    saving=false;$("submitBtn").disabled=false;
+  });
+
+  function renderGroup(){
+    const responded=NAMES.filter(n=>all[n]);
+    $("respCount").textContent=responded.length+" of "+NAMES.length+" responded";
+    const counts={};DAYS.forEach(d=>{const k=iso(d);counts[k]=NAMES.filter(n=>all[n]&&all[n].has(k)).length});
+    buildGrid($("groupCal"),(d,k)=>{
+      const c=counts[k];const b=document.createElement("button");b.type="button";
+      const lvl=c===0?0:Math.min(5,Math.ceil(c/NAMES.length*5));
+      b.className="day h"+lvl+(responded.length>1&&c===responded.length?" all":"")+(focusDay===k?" sel":"");
+      b.append(String(d.getDate()));const s=document.createElement("small");s.textContent=c+"/"+NAMES.length;b.appendChild(s);
+      b.setAttribute("aria-label",fmt(k)+", "+c+" free");
+      b.addEventListener("click",()=>{focusDay=k;renderGroup()});
+      return b;
+    });
+    const who=$("who");who.innerHTML="";
+    if(focusDay){
+      const t=document.createElement("strong");t.textContent=fmt(focusDay)+" · "+counts[focusDay]+" free";who.appendChild(t);
+      const ch=document.createElement("div");ch.className="chips";
+      NAMES.forEach(n=>{const free=all[n]&&all[n].has(focusDay);const c=document.createElement("span");
+        c.className="chip "+(free?"yes":"no");c.textContent=n+(all[n]?"":" (no reply)");ch.appendChild(c)});
+      who.appendChild(ch);
+    }
+    const max=Math.max(0,...Object.values(counts));
+    const top=DAYS.map(iso).filter(k=>max>0&&counts[k]===max);
+    $("best").textContent=max===0?"No one has picked any days yet.":"Most people free ("+max+"/"+NAMES.length+"): "+top.map(fmt).join(", ");
+  }
+
+  renderMine();
+})();
+</script>
+</body>
+</html>
